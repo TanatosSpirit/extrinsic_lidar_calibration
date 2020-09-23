@@ -76,14 +76,29 @@ roll_sum = 0
 pitch_sum = 0
 yaw_sum = 0
 
+roll_rt = []
+pitch_rt = []
+yaw_rt = []
+
 for i in range(len(roll_t_np)):
-    roll_sum += roll_t_np[i] - roll_r_np[i]
-    pitch_sum += pitch_t_np[i] - pitch_r_np[i]
-    yaw_sum += yaw_t_np[i] - yaw_r_np[i]
+    roll_diff = roll_t_np[i] - roll_r_np[i]
+    roll_sum += roll_diff
+    pitch_diff = pitch_t_np[i] - pitch_r_np[i]
+    pitch_sum += pitch_diff
+    yaw_diff = yaw_t_np[i] - yaw_r_np[i]
+    yaw_sum += yaw_diff
+    if yaw_diff > 0:
+        roll_rt.append(roll_diff)
+        pitch_rt.append(pitch_diff)
+        yaw_rt.append(yaw_diff)
 
 ROLL = roll_sum/(len(roll_t_np)-1)
 PITCH = pitch_sum/(len(roll_t_np)-1)
 YAW = yaw_sum/(len(roll_t_np)-1)
+
+roll_rt_np = np.array(roll_rt)
+pitch_rt_np = np.array(pitch_rt)
+yaw_rt_np = np.array(yaw_rt)
 
 print (ROLL)
 print (PITCH)
@@ -110,11 +125,14 @@ fig = plt.figure()
 ax = fig.gca(projection='3d')
 ax.set_aspect('equal')
 
-# ax.plot(x_t_np, y_t_np, z_t_np, label='top lidar', c='r', marker='o')
-# ax.plot(x_r_np, y_r_np, z_r_np, label='right lidar')
+ax.plot(x_t_np, y_t_np, z_t_np, label='top lidar', c='r', marker='o')
+ax.plot(x_r_np, y_r_np, z_r_np, label='right lidar')
 # ax.scatter(x_diff_np, y_diff_np, z_diff_np, label='top lidar', c='r', marker='o')
-ax.scatter(roll_t_np, pitch_t_np, yaw_t_np, label='top lidar', c='r', marker='o')
-ax.scatter(roll_r_np, pitch_r_np, yaw_r_np, label='right lidar', c='b', marker='o')
+
+# ax.scatter(roll_t_np, pitch_t_np, yaw_t_np, label='top lidar', c='r', marker='o')
+# ax.scatter(roll_r_np, pitch_r_np, yaw_r_np, label='right lidar', c='b', marker='o')
+
+# ax.scatter(roll_rt_np, pitch_rt_np, yaw_rt_np, label='right lidar', c='b', marker='o')
 
 
 x_viz = roll_r_np
@@ -122,9 +140,9 @@ y_viz = pitch_r_np
 z_viz = yaw_r_np
 # Create cubic bounding box to simulate equal aspect ratio
 max_range = np.array([x_viz.max()-x_viz.min(), y_viz.max()-y_viz.min(), z_viz.max()-z_viz.min()]).max()
-Xb = 0.5*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][0].flatten() + 0.5*(x_viz.max()+x_viz.min())
-Yb = 0.5*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][1].flatten() + 0.5*(y_viz.max()+y_viz.min())
-Zb = 0.5*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][2].flatten() + 0.5*(z_viz.max()+z_viz.min())
+Xb = 0.01*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][0].flatten() + 0.01*(x_viz.max()+x_viz.min())
+Yb = 0.01*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][1].flatten() + 0.01*(y_viz.max()+y_viz.min())
+Zb = 0.01*max_range*np.mgrid[-1:2:2,-1:2:2,-1:2:2][2].flatten() + 0.01*(z_viz.max()+z_viz.min())
 # Comment or uncomment following both lines to test the fake bounding box:
 for xb, yb, zb in zip(Xb, Yb, Zb):
    ax.plot([xb], [yb], [zb], 'w')
