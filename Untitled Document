@@ -21,3 +21,28 @@ left
 ('roll: ', -0.6467354859504812)
 ('pitch: ', 0.003460411767507291)
 ('yaw: ', -2.9035459234095016)
+
+
+top2right
+- Translation: [-0.008, -0.599, -0.230]
+- Rotation: in Quaternion [0.263, -0.024, -0.001, 0.965]
+            in RPY (radian) [0.532, -0.045, -0.015]
+            in RPY (degree) [30.495, -2.559, -0.856]
+
+right2top
+- Translation: [0.009, 0.632, -0.106]
+- Rotation: in Quaternion [-0.263, 0.024, 0.001, 0.965]
+            in RPY (radian) [-0.532, 0.046, -0.010]
+            in RPY (degree) [-30.488, 2.640, -0.561]
+
+top2left
+- Translation: [0.013, -0.596, -0.086]
+- Rotation: in Quaternion [0.252, -0.001, 0.026, 0.967]
+            in RPY (radian) [0.510, -0.016, 0.050]
+            in RPY (degree) [29.212, -0.921, 2.879]
+
+left2top
+- Translation: [0.019, 0.562, -0.216]
+- Rotation: in Quaternion [-0.252, 0.001, -0.026, 0.967]
+            in RPY (radian) [-0.510, -0.011, -0.052]
+            in RPY (degree) [-29.220, -0.602, -2.962]
