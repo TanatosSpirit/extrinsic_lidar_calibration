@@ -1,0 +1,129 @@
+void PlanningHelpers::GenerateRecommendedSpeed(::std::vector<WayPoint>& in_path,
+                                               double max_speed,
+                                               double min_speed,
+                                               double min_turn_radius)
+{
+  ::std::vector<WayPoint> path = in_path;
+  in_path.clear();
+
+  ::std::vector<double> h(path.size() - 1);
+  ::std::vector<double> b(path.size() - 1);
+  for (::std::size_t i = 0; i < path.size() - 1; ++i)
+  {
+    h[i] = path[i + 1].pos.x - path[i].pos.x;
+    if (h[i] < 1e-4 && h[i] > 0.0)
+      h[i] = 1e-4;
+    else if (h[i] > -1e-4 && h[i] < 0.0)
+      h[i] = -1e-4;
+
+    b[i] = (path[i + 1].pos.y - path[i].pos.y) / h[i];
+  }
+
+  ::std::vector<double> v(path.size() - 2);
+  ::std::vector<double> u(path.size() - 2);
+  for (::std::size_t i = 0; i < path.size() - 2; ++i)
+  {
+    v[i] = 2.0 * (h[i] + h[i + 1]);
+    if (v[i] < 1e-4 && v[i] > 0.0)
+      v[i] = 1e-4;
+    else if (v[i] > -1e-4 && v[i] < 0.0)
+      v[i] = -1e-4;
+
+    u[i] = 6.0 * (b[i + 1] - b[i]);
+  }
+
+  double m;
+  for (::std::size_t i = 1; i < path.size() - 2; ++i)
+  {
+    m = h[i] / v[i - 1];
+    v[i] = v[i] - m * h[i];
+    if (v[i] < 1e-4 && v[i] > 0.0)
+      v[i] = 1e-4;
+    else if (v[i] > -1e-4 && v[i] < 0.0)
+      v[i] = -1e-4;
+
+    u[i] = u[i] - m * u[i - 1];
+  }
+
+  ::std::size_t i_last = path.size() - 3;
+  ::std::vector<double> z(path.size() - 2);
+  z[i_last] = u[i_last] / v[i_last];
+  for (::std::size_t i = 0; i < i_last; ++i)
+    z[i_last - 1 - i] = (u[i_last - 1 - i] - h[i_last - i] * z[i_last - i]) / v[i_last - 1 - i];
+
+  ::std::size_t helper_point_number = 4;
+  double neighbour_diff_x;
+  WayPoint helper_waypoint;
+  for (::std::size_t i = 0; i < path.size() - 2; ++i)
+  {
+//    path[i + 1].curvature = /*z[i] * (path[i + 2].pos.x - path[i + 1].pos.x) / h[i + 1]
+//                          / pow(1.0 + pow(*/-z[i] * h[i + 1] / 2.0 + b[i + 1]
+//                          - h[i + 1] * (z[i + 1] - z[i]) / 6.0/*, 2.0), 1.5)*/;
+    in_path.push_back(path[i + 1]);
+    neighbour_diff_x = (path[i + 2].pos.x - path[i + 1].pos.x) / double(helper_point_number + 1);
+
+    if (::std::abs(neighbour_diff_x) > 1e-2)
+    {
+      helper_waypoint = path[i + 1];
+      for (::std::size_t j = 1; j < helper_point_number + 1; ++j)
+      {
+        helper_waypoint.pos.x = path[i + 1].pos.x + j * neighbour_diff_x;
+        helper_waypoint.pos.y = (z[i + 1] * pow(helper_waypoint.pos.x - path[i + 1].pos.x, 3.0)
+                              + z[i] * pow(path[i + 2].pos.x - helper_waypoint.pos.x, 3.0)) / 6.0 / h[i + 1]
+                              + (path[i + 2].pos.y / h[i + 1] - z[i + 1] * h[i + 1] / 6.0)
+                              * (helper_waypoint.pos.x - path[i + 1].pos.x)
+                              + (path[i + 1].pos.y / h[i + 1] - z[i] * h[i + 1] / 6.0)
+                              * (path[i + 2].pos.x - helper_waypoint.pos.x);
+        in_path.push_back(helper_waypoint);
+      }
+    }
+  }
+
+  in_path[0].pos.a = atan2(in_path[1].pos.y - in_path[0].pos.y, in_path[1].pos.x - in_path[0].pos.x);
+
+  double turn_radius = min_turn_radius;
+  const double max_turn_radius = 1e3;
+
+  double half_perimeter;
+  double length_ab = hypot(in_path[1].pos.x - in_path[0].pos.x, in_path[1].pos.y - in_path[0].pos.y);
+  double length_bc;
+  double length_ca;
+
+  for(::std::size_t j = 1; j < in_path.size() - 1; j++)
+  {
+    length_bc = hypot(in_path[j+1].pos.x - in_path[j].pos.x, in_path[j+1].pos.y - in_path[j].pos.y);
+    length_ca = hypot(in_path[j+1].pos.x - in_path[j-1].pos.x, in_path[j+1].pos.y - in_path[j-1].pos.y);
+
+    if(length_ab < 1e-3 || length_bc < 1e-3 || length_ca < 1e-3)
+    {
+      in_path[j].cost = in_path[j-1].cost;
+      in_path[j].pos.a = in_path[j-1].pos.a;
+    }
+    else
+    {
+      if(::std::abs(length_ab + length_bc - length_ca) < 1e-6)
+        turn_radius = max_turn_radius;
+      else
+      {
+        half_perimeter = (length_ab + length_bc + length_ca) / 2.0;
+        turn_radius = length_ab * length_bc * length_ca
+            / 4.0 / sqrt(half_perimeter
+                         * (half_perimeter - length_ab)
+                         * (half_perimeter - length_bc)
+                         * (half_perimeter - length_ca));
+      }
+
+      if(turn_radius > max_turn_radius || std::isnan(turn_radius))
+        turn_radius = max_turn_radius;
+
+      if(turn_radius < min_turn_radius)
+        turn_radius = min_turn_radius;
+
+      in_path[j].cost = (turn_radius - min_turn_radius) / turn_radius;
+      in_path[j].pos.a = atan2(in_path[j+1].pos.y - in_path[j].pos.y, in_path[j+1].pos.x - in_path[j].pos.x );
+      in_path[j].curvature = 1.0 / turn_radius;
+    }
+
+    length_ab = length_bc;
+  }
+}
