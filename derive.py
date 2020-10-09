@@ -68,14 +68,14 @@ def main():
 
     ### Дискретный набор точек окружности
 
-    # phi_step = 1.0     # градусы
-    # radius = 20
-    #
-    # step = phi_step / 180 * np.pi
-    # phi_np = np.arange(0.0, 2.0 * np.pi - step, step)
-    #
-    # X_np = radius * np.cos(phi_np)
-    # Y_np = radius * np.sin(phi_np)
+    phi_step = 5.0     # градусы
+    radius = 20
+
+    step = phi_step / 180 * np.pi
+    phi_np = np.arange(0.0, 2.0 * np.pi - step, step)
+
+    X_np = radius * np.cos(phi_np)
+    Y_np = radius * np.sin(phi_np)
 
     X = X_np
     Y = Y_np
@@ -87,13 +87,14 @@ def main():
     Curv_result = np.array([])
 
     for i in range((len(X) // window) -1):
+    # for i in range(1):
 
         start_point = i * window
         end_point = start_point + window
 
         ### Интерполяция
         if True:
-            z = np.polyfit(X[start_point:end_point], Y[start_point:end_point], 4)
+            z = np.polyfit(X[start_point:end_point], Y[start_point:end_point], 3)
 
             # xp = np.arange(-110.0, -95.0, 0.5)
 
