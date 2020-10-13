@@ -3,6 +3,58 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+def get_radius(X, Y):
+
+    radius = np.array([])
+    path = np.array([])
+    total_path = 0
+    min_turn_radius = 1
+
+    turn_radius = min_turn_radius
+    max_turn_radius = 30
+
+    half_perimeter = 0
+    length_ab = np.hypot(X[1] - X[0], Y[1] - Y[0])
+    total_path += length_ab
+    path = np.append(path, total_path)
+    length_bc = 0
+    length_ca = 0
+
+    for i in range(1, len(X) - 1):
+        length_bc = np.hypot(X[i + 1] - X[i], Y[i + 1] - Y[i])
+        length_ca = np.hypot(X[i + 1] - X[i - 1], Y[i + 1] - Y[i - 1])
+
+        if length_ab < 1e-3 or length_bc < 1e-3 or length_ca < 1e-3:
+            pass
+        else:
+            diff = length_ab + length_bc - length_ca
+            if abs(diff) < 1e-6:
+                turn_radius = max_turn_radius
+            else:
+                half_perimeter = (length_ab + length_bc + length_ca) / 2.0
+
+                abc = length_ab * length_bc * length_ca
+
+                ab_diff = half_perimeter - length_ab
+                bc_diff = half_perimeter - length_bc
+                ca_diff = half_perimeter - length_ca
+                divider = 4 * np.sqrt(half_perimeter * ab_diff * bc_diff * ca_diff)
+                turn_radius = abc / divider
+
+            if turn_radius > max_turn_radius or np.isnan(turn_radius):
+                turn_radius = max_turn_radius
+
+            if turn_radius < min_turn_radius:
+                turn_radius = min_turn_radius
+
+        radius = np.append(radius, 1/turn_radius)
+        length_ab = length_bc
+        total_path += length_ab
+        path = np.append(path, total_path)
+
+    radius = np.append(radius, 1/turn_radius)
+    # radius = np.append(radius, turn_radius)
+    return radius, path
 
 def derivative(X, Y):
     '''
@@ -68,17 +120,20 @@ def main():
 
     ### Дискретный набор точек окружности
 
-    phi_step = 5.0     # градусы
-    radius = 20
-
-    step = phi_step / 180 * np.pi
-    phi_np = np.arange(0.0, 2.0 * np.pi - step, step)
-
-    X_np = radius * np.cos(phi_np)
-    Y_np = radius * np.sin(phi_np)
+    # phi_step = 3.0     # градусы
+    # radius = 10
+    #
+    # step = phi_step / 180 * np.pi
+    # phi_np = np.arange(0.0, 2.0 * np.pi - step, step)
+    #
+    # X_np = radius * np.cos(phi_np)
+    # Y_np = radius * np.sin(phi_np)
 
     X = X_np
     Y = Y_np
+
+    radius, path = get_radius(X, Y)
+    print(radius)
 
     window = 5
 
@@ -93,7 +148,7 @@ def main():
         end_point = start_point + window
 
         ### Интерполяция
-        if True:
+        if False:
             z = np.polyfit(X[start_point:end_point], Y[start_point:end_point], 3)
 
             # xp = np.arange(-110.0, -95.0, 0.5)
@@ -103,7 +158,7 @@ def main():
 
 
         ### Нахождение производных
-        if True:
+        if False:
 
             # for i in range(len(X_np) - 1):
             #     if abs(X_np[i] - X_np[i+1]) < 10e-6:
@@ -124,22 +179,22 @@ def main():
 
             c_np = np.array(c)
 
-        X_result = np.append(X_result, X[start_point:end_point])
-        Y_result = np.append(Y_result, p(X[start_point:end_point]))
-        Curv_result = np.append(Curv_result, c_np)
+        # X_result = np.append(X_result, X[start_point:end_point])
+        # Y_result = np.append(Y_result, p(X[start_point:end_point]))
+        # Curv_result = np.append(Curv_result, c_np)
 
 
     ### Отрисовка графиков
     fig = plt.figure()
-    # ax = fig.gca()
-    ax = fig.gca(projection='3d')
+    ax = fig.gca()
+    # ax = fig.gca(projection='3d')
 
     ### 3d Plot
-    ax.plot(X, Y, np.zeros(len(X)), label='result', c='g', marker='o')
-    ax.plot(X_result, Y_result, Curv_result, label='result', c='r', marker='o')
+    # ax.plot(X, Y, np.zeros(len(X)), label='result', c='g', marker='o')
+    # ax.plot(X_result, Y_result, Curv_result, label='result', c='r', marker='o')
     # ax.plot(X_result, Y_result, np.zeros(len(Curv_result)), label='Original', c='b', marker='o')
 
-    # ax.scatter(X_np, Y_np, c='r', marker='o')
+    ax.plot(path, radius, c='r', marker='o')
     # ax.scatter(X_np, D, c='b', marker='o')
     # ax.scatter(X_np, DD, c='--r', marker='o')
     # ax.scatter(X_np, c_np, c='b', marker='o')
